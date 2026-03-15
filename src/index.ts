@@ -88,11 +88,11 @@ export default class CalendarDeadlinesPlugin extends Plugin {
     this.protyleSlash = [
       {
         filter: ["deadlines", "ddl", "deadline-check"],
-        html: `<span>${this.i18n.slashCheckLabel ?? "Insert deadlines checklist"}</span>`,
+        html: `<span>${this.i18n.slashCheckLabel ?? "Open deadline inspector"}</span>`,
         id: `${this.name}-deadlines-check`,
         callback: (protyle) => {
-          const markdown = this.buildDeadlineChecklistMarkdown();
-          protyle.insert(markdown, false);
+          protyle.insert(window.Lute.Caret, false);
+          this.openDeadlineInspectorDialog();
         }
       },
       {
@@ -100,6 +100,7 @@ export default class CalendarDeadlinesPlugin extends Plugin {
         html: `<span>${this.i18n.slashAddLabel ?? "Quick add deadline"}</span>`,
         id: `${this.name}-deadlines-add`,
         callback: (protyle) => {
+          protyle.insert(window.Lute.Caret, false);
           const task = this.promptTaskInput();
           if (!task) {
             return;
@@ -107,7 +108,17 @@ export default class CalendarDeadlinesPlugin extends Plugin {
 
           this.insertTask(task);
           showMessage(this.i18n.createdTask ?? "Task created");
-          protyle.insert(`- [ ] ${task.title} (${formatDueSchedule(task.dueDate, task.dueTime)})`, false);
+          this.openDeadlineInspectorDialog();
+        }
+      },
+      {
+        filter: ["deadlinelink", "ddllink", "deadline-link"],
+        html: `<span>${this.i18n.slashLinkLabel ?? "Insert board link"}</span>`,
+        id: `${this.name}-deadlines-link`,
+        callback: (protyle) => {
+          const linkText = this.i18n.boardTitle ?? "Deadline Board";
+          protyle.insert(`[${linkText}](${this.getBoardDeepLink()})`, false);
+          showMessage(this.i18n.insertedBoardLink ?? "Board link inserted");
         }
       },
       {
@@ -190,6 +201,11 @@ export default class CalendarDeadlinesPlugin extends Plugin {
       icon: "iconAdd",
       label: this.i18n.newTask ?? "New Task",
       click: () => this.quickAddTask()
+    });
+    menu.addItem({
+      icon: "iconList",
+      label: this.i18n.openInspector ?? "Inspector",
+      click: () => this.openDeadlineInspectorDialog()
     });
 
     menu.open({
@@ -276,18 +292,8 @@ export default class CalendarDeadlinesPlugin extends Plugin {
     this.afterStateMutate();
   }
 
-  private buildDeadlineChecklistMarkdown(): string {
-    const tasks = summarizeUpcoming(this.state.tasks);
-    if (!tasks.length) {
-      return `- [ ] ${this.i18n.emptyDock ?? "No active tasks"}`;
-    }
-
-    const lines = tasks.map((task) => {
-      const due = formatDueSchedule(task.dueDate, task.dueTime);
-      const extra = task.dueText ? ` - ${task.dueText}` : "";
-      return `- [ ] ${task.title} (${due})${extra}`;
-    });
-    return lines.join("\n");
+  private getBoardDeepLink(): string {
+    return `siyuan://plugins/${this.name}`;
   }
 
   private openDeadlineInspectorDialog(): void {
@@ -396,7 +402,11 @@ export default class CalendarDeadlinesPlugin extends Plugin {
       <section class="deadline-dock">
         <header class="deadline-dock__head">
           <span class="deadline-dock__title">${this.i18n.dockTitle ?? "Deadlines"}</span>
-          <button class="deadline-dock__open" data-role="open-board">${this.i18n.openBoard ?? "Open"}</button>
+          <div class="deadline-dock__actions">
+            <button class="deadline-dock__btn" data-role="quick-add">${this.i18n.newTask ?? "New"}</button>
+            <button class="deadline-dock__btn" data-role="open-inspector">${this.i18n.openInspector ?? "Inspector"}</button>
+            <button class="deadline-dock__btn" data-role="open-board">${this.i18n.openBoard ?? "Open"}</button>
+          </div>
         </header>
         <ul class="deadline-dock__list">
           ${
@@ -418,6 +428,11 @@ export default class CalendarDeadlinesPlugin extends Plugin {
     `;
 
     const openButton = this.dockElement.querySelector<HTMLButtonElement>("[data-role='open-board']");
+    const addButton = this.dockElement.querySelector<HTMLButtonElement>("[data-role='quick-add']");
+    const inspectButton = this.dockElement.querySelector<HTMLButtonElement>("[data-role='open-inspector']");
+
+    addButton?.addEventListener("click", () => this.quickAddTask(), { once: true });
+    inspectButton?.addEventListener("click", () => this.openDeadlineInspectorDialog(), { once: true });
     openButton?.addEventListener("click", () => this.openBoardTab(), { once: true });
   }
 
