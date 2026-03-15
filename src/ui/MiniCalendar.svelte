@@ -87,53 +87,58 @@
 <style>
   .mini-calendar {
     background: var(--surface-card, var(--b3-theme-surface, #1a1b1e));
-    border: 1px solid var(--line, var(--b3-border-color, #2a2b2f));
+    border: 1px solid transparent;
     border-radius: 12px;
-    padding: 16px;
+    padding: 18px;
     width: 260px;
     flex-shrink: 0;
     font-family: inherit;
     box-sizing: border-box;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.18);
   }
   .cal-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 12px;
-    color: var(--text-1, var(--b3-theme-on-background, #ffffff));
+    margin-bottom: 14px;
+    color: var(--text-1, var(--b3-theme-on-background, #e5e7eb));
   }
   .cal-month {
-    font-size: 0.9rem;
+    font-size: 0.92rem;
     font-weight: 600;
+    line-height: 1.25;
+    letter-spacing: 0.01em;
   }
   .cal-btn {
     background: transparent;
     border: none;
     color: var(--text-2, var(--b3-theme-on-surface, #8a8f98));
     cursor: pointer;
-    padding: 4px;
+    padding: 6px;
     display: flex;
     align-items: center;
     justify-content: center;
-    border-radius: 4px;
+    border-radius: 6px;
     transition: all 0.2s;
   }
   .cal-btn:hover {
-    background: var(--line-faint, var(--b3-border-color-trans, #1e1f22));
-    color: var(--text-1, var(--b3-theme-on-background, #ffffff));
+    background: var(--surface-col, var(--b3-theme-surface-light, #1d222b));
+    color: var(--text-1, var(--b3-theme-on-background, #e5e7eb));
   }
   .cal-grid {
     display: grid;
     grid-template-columns: repeat(7, 1fr);
-    gap: 4px;
+    gap: 6px;
   }
   .cal-days-head {
-    margin-bottom: 8px;
+    margin-bottom: 10px;
   }
   .cal-days-head span {
     text-align: center;
-    font-size: 0.7rem;
-    font-weight: 500;
+    font-size: 0.68rem;
+    font-weight: 600;
+    line-height: 1.2;
+    letter-spacing: 0.03em;
     color: var(--text-2, var(--b3-theme-on-surface, #8a8f98));
   }
   .cal-day {
@@ -142,9 +147,11 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    font-size: 0.8rem;
-    color: var(--text-1, var(--b3-theme-on-background, #ffffff));
-    border-radius: 6px;
+    font-size: 0.82rem;
+    font-weight: 500;
+    line-height: 1.2;
+    color: var(--text-1, var(--b3-theme-on-background, #e5e7eb));
+    border-radius: 8px;
     position: relative;
     cursor: default;
     transition: background 0.15s;
@@ -162,12 +169,13 @@
   }
   .day-num {
     z-index: 1;
+    font-variant-numeric: tabular-nums;
   }
   .dots {
     display: flex;
-    gap: 2px;
+    gap: 3px;
     position: absolute;
-    bottom: 2px;
+    bottom: 3px;
     align-items: center;
   }
   .dot {
@@ -181,10 +189,15 @@
   }
   .dot-more {
     font-size: 8px;
-    font-weight: 800;
-    line-height: 4px;
+    font-weight: 700;
+    line-height: 1;
     color: var(--text-2, var(--b3-theme-on-surface, #8a8f98));
     margin-left: 1px;
     padding-bottom: 2px;
+  }
+
+  .cal-btn:focus-visible {
+    outline: 2px solid rgba(96, 165, 250, 0.55);
+    outline-offset: 1px;
   }
 </style>

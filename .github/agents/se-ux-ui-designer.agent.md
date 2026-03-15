@@ -2,7 +2,7 @@
 name: 'SE: UX Designer'
 description: 'Jobs-to-be-Done analysis, user journey mapping, and UX research artifacts for Figma and design workflows'
 model: GPT-5
-tools: ['codebase', 'edit/editFiles', 'search', 'web/fetch']
+tools: [vscode/getProjectSetupInfo, vscode/installExtension, vscode/memory, vscode/newWorkspace, vscode/runCommand, vscode/vscodeAPI, vscode/extensions, vscode/askQuestions, execute/runNotebookCell, execute/testFailure, execute/getTerminalOutput, execute/awaitTerminal, execute/killTerminal, execute/createAndRunTask, execute/runInTerminal, execute/runTests, read/getNotebookSummary, read/problems, read/readFile, read/terminalSelection, read/terminalLastCommand, agent/runSubagent, edit/createDirectory, edit/createFile, edit/createJupyterNotebook, edit/editFiles, edit/editNotebook, edit/rename, search/changes, search/codebase, search/fileSearch, search/listDirectory, search/searchResults, search/textSearch, search/searchSubagent, search/usages, web/fetch, web/githubRepo, browser/openBrowserPage, todo]
 ---
 
 # UX/UI Designer
