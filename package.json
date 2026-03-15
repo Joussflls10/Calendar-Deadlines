@@ -1,0 +1,27 @@
+{
+  "name": "calendar-deadlines",
+  "version": "0.0.1",
+  "type": "module",
+  "description": "SiYuan plugin: deadline kanban board with dock summary",
+  "author": "Jouss",
+  "license": "MIT",
+  "scripts": {
+    "dev": "cross-env NODE_ENV=development VITE_SOURCEMAP=inline vite build --watch",
+    "build": "cross-env NODE_ENV=production vite build",
+    "check": "tsc --noEmit",
+    "preview-ui": "vite --config vite.ui.config.ts"
+  },
+  "devDependencies": {
+    "@sveltejs/vite-plugin-svelte": "^3.1.0",
+    "@types/node": "^20.14.2",
+    "cross-env": "^7.0.3",
+    "fast-glob": "^3.3.2",
+    "rollup-plugin-livereload": "^2.0.5",
+    "siyuan": "^1.1.2",
+    "svelte": "^4.2.20",
+    "typescript": "^5.5.2",
+    "vite": "^5.2.12",
+    "vite-plugin-static-copy": "^1.0.5",
+    "vite-plugin-zip-pack": "^1.0.5"
+  }
+}

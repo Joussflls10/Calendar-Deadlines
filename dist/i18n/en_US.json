@@ -1,0 +1,19 @@
+{
+  "openBoard": "Open Deadline Board",
+  "boardTitle": "Deadline Board",
+  "dockTitle": "Deadline Summary",
+  "newTask": "New Task",
+  "newTaskPrompt": "Task title",
+  "newTaskDuePrompt": "Due date (optional, YYYY-MM-DD)",
+  "newTaskTimePrompt": "Due time (optional, HH:mm)",
+  "invalidDueDate": "Invalid due date. Use YYYY-MM-DD.",
+  "invalidDueTime": "Invalid time. Use HH:mm.",
+  "slashCheckLabel": "Insert deadlines checklist",
+  "slashAddLabel": "Quick add deadline",
+  "slashInspectLabel": "Open deadline inspector",
+  "deadlineInspectorTitle": "Deadline Inspector",
+  "activeDeadlineCount": "active deadlines",
+  "createdTask": "Task created",
+  "linkHint": "This task is not linked to a SiYuan document/block yet.",
+  "emptyDock": "No active tasks"
+}

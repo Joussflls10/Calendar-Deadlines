@@ -1,0 +1,167 @@
+with open('src/ui/MiniCalendar.svelte', 'w', encoding='utf-8') as f:
+    f.write('''<script lang="ts">
+  import type { DeadlineTask } from "@/types";
+
+  export let tasks: DeadlineTask[] = [];
+
+  let today = new Date();
+  $: currentMonth = today.getMonth();
+  $: currentYear = today.getFullYear();
+
+  $: firstDayOfMonth = new Date(currentYear, currentMonth, 1).getDay();
+  $: daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+
+  $: days = Array.from({ length: daysInMonth }, (_, i) => {
+    const day = i + 1;
+    const m = String(currentMonth + 1).padStart(2, '0');
+    const d = String(day).padStart(2, '0');
+    const dateStr = `${currentYear}-${m}-${d}`;
+    
+    const hasDeadline = tasks.some(t => {
+      if (!t.dueDate) return false;
+      return t.dueDate === dateStr || t.dueDate.startsWith(dateStr);
+    });
+
+    const isToday = day === today.getDate() && currentMonth === today.getMonth() && currentYear === today.getFullYear();
+
+    return { day, dateStr, hasDeadline, isToday };
+  });
+
+  const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+
+  function prevMonth() {
+    if (currentMonth === 0) {
+      currentMonth = 11;
+      currentYear -= 1;
+    } else {
+      currentMonth -= 1;
+    }
+  }
+
+  function nextMonth() {
+    if (currentMonth === 11) {
+      currentMonth = 0;
+      currentYear += 1;
+    } else {
+      currentMonth += 1;
+    }
+  }
+</script>
+
+<div class="mini-calendar">
+  <header class="cal-header">
+    <button class="cal-btn" on:click={prevMonth}>
+      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+    </button>
+    <div class="cal-month">{monthNames[currentMonth]} {currentYear}</div>
+    <button class="cal-btn" on:click={nextMonth}>
+      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+    </button>
+  </header>
+  <div class="cal-grid cal-days-head">
+    <span>Su</span><span>Mo</span><span>Tu</span><span>We</span><span>Th</span><span>Fr</span><span>Sa</span>
+  </div>
+  <div class="cal-grid cal-days">
+    {#each Array(firstDayOfMonth) as _}
+      <div class="cal-day empty"></div>
+    {/each}
+    {#each days as { day, isToday, hasDeadline }}
+      <div class="cal-day" class:today={isToday}>
+        <span class="day-num">{day}</span>
+        {#if hasDeadline}
+          <div class="dot"></div>
+        {/if}
+      </div>
+    {/each}
+  </div>
+</div>
+
+<style>
+  .mini-calendar {
+    background: var(--surface-card, var(--b3-theme-surface, #1a1b1e));
+    border: 1px solid var(--line, var(--b3-border-color, #2a2b2f));
+    border-radius: 12px;
+    padding: 16px;
+    width: 260px;
+    flex-shrink: 0;
+    font-family: inherit;
+    box-sizing: border-box;
+  }
+  .cal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+    color: var(--text-1, var(--b3-theme-on-background, #ffffff));
+  }
+  .cal-month {
+    font-size: 0.9rem;
+    font-weight: 600;
+  }
+  .cal-btn {
+    background: transparent;
+    border: none;
+    color: var(--text-2, var(--b3-theme-on-surface, #8a8f98));
+    cursor: pointer;
+    padding: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    transition: all 0.2s;
+  }
+  .cal-btn:hover {
+    background: var(--line-faint, var(--b3-border-color-trans, #1e1f22));
+    color: var(--text-1, var(--b3-theme-on-background, #ffffff));
+  }
+  .cal-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 4px;
+  }
+  .cal-days-head {
+    margin-bottom: 8px;
+  }
+  .cal-days-head span {
+    text-align: center;
+    font-size: 0.7rem;
+    font-weight: 500;
+    color: var(--text-2, var(--b3-theme-on-surface, #8a8f98));
+  }
+  .cal-day {
+    aspect-ratio: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8rem;
+    color: var(--text-1, var(--b3-theme-on-background, #ffffff));
+    border-radius: 6px;
+    position: relative;
+    cursor: default;
+    transition: background 0.15s;
+  }
+  .cal-day.empty {
+    visibility: hidden;
+  }
+  .cal-day:not(.empty):hover {
+    background: var(--line-faint, var(--b3-border-color-trans, #1e1f22));
+  }
+  .cal-day.today {
+    background: var(--brand-blue-bg, var(--b3-theme-primary-light, #1c2b42));
+    color: var(--brand-blue, var(--b3-theme-primary, #60a5fa));
+    font-weight: 600;
+  }
+  .day-num {
+    z-index: 1;
+  }
+  .dot {
+    width: 4px;
+    height: 4px;
+    background: var(--dot-urgent, var(--b3-theme-error, #ef4444));
+    border-radius: 50%;
+    position: absolute;
+    bottom: 4px;
+  }
+</style>
+''')

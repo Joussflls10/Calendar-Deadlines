@@ -1,0 +1,40 @@
+{
+  "name": "calendar-deadlines",
+  "author": "Jouss",
+  "url": "https://github.com/jouss/calendar-deadlines",
+  "version": "0.0.1",
+  "minAppVersion": "3.2.1",
+  "backends": [
+    "windows",
+    "linux",
+    "darwin",
+    "ios",
+    "android",
+    "docker"
+  ],
+  "frontends": [
+    "desktop",
+    "mobile",
+    "browser-desktop",
+    "browser-mobile",
+    "desktop-window"
+  ],
+  "displayName": {
+    "default": "Calendar Deadlines",
+    "en_US": "Calendar Deadlines"
+  },
+  "description": {
+    "default": "Deadline kanban board with dock summary for SiYuan",
+    "en_US": "Deadline kanban board with dock summary for SiYuan"
+  },
+  "readme": {
+    "default": "README.md",
+    "en_US": "README.md"
+  },
+  "keywords": [
+    "deadline",
+    "kanban",
+    "calendar",
+    "task"
+  ]
+}

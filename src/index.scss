@@ -1,0 +1,64 @@
+:root {
+  --deadline-bg: #f3efe5;
+  --deadline-ink: #1d1f22;
+  --deadline-muted: #58606b;
+  --deadline-card: #fffdf8;
+  --deadline-border: #d7d0be;
+  --deadline-red: #c83f49;
+  --deadline-amber: #cf8b2b;
+  --deadline-blue: #2a67a4;
+  --deadline-green: #2e7f57;
+}
+
+.deadline-dock {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  border-left: 1px solid var(--b3-border-color);
+}
+
+.deadline-dock__head {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--b3-border-color);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.deadline-dock__title {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.deadline-dock__open {
+  border: 1px solid var(--b3-border-color);
+  background: transparent;
+  padding: 4px 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.deadline-dock__list {
+  margin: 0;
+  padding: 8px;
+  list-style: none;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.deadline-dock__item {
+  border: 1px solid var(--b3-border-color);
+  border-radius: 8px;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.deadline-dock__meta {
+  color: var(--b3-theme-on-surface-light);
+  font-size: 11px;
+}
