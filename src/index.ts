@@ -19,6 +19,7 @@ import {
   deriveColumnFromDueDate,
   deriveDueStatus,
   formatDueSchedule,
+  getDueDiffDays,
   normalizeDueDate,
   normalizeDueTime,
   normalizeState,
@@ -49,7 +50,7 @@ export default class CalendarDeadlinesPlugin extends Plugin {
   onLayoutReady(): void {
     const topBar = this.addTopBar({
       icon: "iconDeadlineCalendar",
-      title: this.i18n.openBoard ?? "Open Deadline Board",
+      title: this.i18n.openInspector ?? "Open Inspector",
       position: "right",
       callback: () => {
         const rect = topBar.getBoundingClientRect();
@@ -70,10 +71,10 @@ export default class CalendarDeadlinesPlugin extends Plugin {
 
   private registerCommands(): void {
     this.addCommand({
-      langKey: "openBoard",
-      langText: this.i18n.openBoard,
+      langKey: "openInspector",
+      langText: this.i18n.openInspector ?? "Open Inspector",
       hotkey: "⇧⌘K",
-      callback: () => this.openBoardTab()
+      callback: () => this.openDeadlineInspectorDialog()
     });
 
     this.addCommand({
@@ -101,14 +102,7 @@ export default class CalendarDeadlinesPlugin extends Plugin {
         id: `${this.name}-deadlines-add`,
         callback: (protyle) => {
           protyle.insert(window.Lute.Caret, false);
-          const task = this.promptTaskInput();
-          if (!task) {
-            return;
-          }
-
-          this.insertTask(task);
-          showMessage(this.i18n.createdTask ?? "Task created");
-          this.openDeadlineInspectorDialog();
+          this.openQuickAddDialog();
         }
       },
       {
@@ -193,11 +187,6 @@ export default class CalendarDeadlinesPlugin extends Plugin {
   private openTopbarMenu(rect: DOMRect): void {
     const menu = new Menu("calendar-deadlines-topbar");
     menu.addItem({
-      icon: "iconDeadlineCalendar",
-      label: this.i18n.openBoard ?? "Open Deadline Board",
-      click: () => this.openBoardTab()
-    });
-    menu.addItem({
       icon: "iconAdd",
       label: this.i18n.newTask ?? "New Task",
       click: () => this.quickAddTask()
@@ -228,58 +217,56 @@ export default class CalendarDeadlinesPlugin extends Plugin {
   }
 
   private quickAddTask(): void {
-    const task = this.promptTaskInput();
-    if (!task) {
-      return;
-    }
-
-    this.insertTask(task);
-    showMessage(this.i18n.createdTask ?? "Task created");
+    this.openQuickAddDialog();
   }
 
-  private promptTaskInput(): DeadlineTask | null {
-    const title = window.prompt(this.i18n.newTaskPrompt ?? "Task title");
-    if (!title || !title.trim()) {
+  private createTaskFromInput(args: {
+    title: string;
+    dueDateValue?: string;
+    dueTimeValue?: string;
+    priorityValue?: string;
+  }): DeadlineTask | null {
+    const title = args.title.trim();
+    if (!title) {
+      showMessage(this.i18n.newTaskPrompt ?? "Task title");
       return null;
     }
 
-    const dueInput = window.prompt(
-      this.i18n.newTaskDuePrompt ?? "Due date (optional, YYYY-MM-DD)",
-      todayIsoDate()
-    );
-
+    const dueDateRaw = args.dueDateValue?.trim();
     let dueDate: string | undefined;
-    if (dueInput !== null && dueInput.trim()) {
-      dueDate = normalizeDueDate(dueInput);
+    if (dueDateRaw) {
+      dueDate = normalizeDueDate(dueDateRaw);
       if (!dueDate) {
         showMessage(this.i18n.invalidDueDate ?? "Invalid due date. Use YYYY-MM-DD.");
         return null;
       }
     }
 
-    const timeInput = window.prompt(
-      this.i18n.newTaskTimePrompt ?? "Due time (optional, HH:mm)",
-      ""
-    );
-
+    const dueTimeRaw = args.dueTimeValue?.trim();
     let dueTime: string | undefined;
-    if (timeInput !== null && timeInput.trim()) {
-      dueTime = normalizeDueTime(timeInput);
+    if (dueTimeRaw) {
+      dueTime = normalizeDueTime(dueTimeRaw);
       if (!dueTime) {
         showMessage(this.i18n.invalidDueTime ?? "Invalid time. Use HH:mm.");
         return null;
       }
     }
 
+    const priority =
+      args.priorityValue === "High" || args.priorityValue === "Medium" || args.priorityValue === "Low"
+        ? args.priorityValue
+        : undefined;
+
     const now = Date.now();
     return normalizeTask({
       id: createTaskId(),
-      title: title.trim(),
+      title,
       column: dueDate ? deriveColumnFromDueDate(dueDate) : "today",
       dueDate,
       dueTime,
       completed: false,
       tags: [],
+      priority,
       dueStatus: deriveDueStatus(dueDate),
       dueText: buildDueText(dueDate, dueTime),
       createdAt: now,
@@ -287,9 +274,107 @@ export default class CalendarDeadlinesPlugin extends Plugin {
     });
   }
 
+  private openQuickAddDialog(): void {
+    const dialog = new Dialog({
+      title: this.i18n.quickAddDialogTitle ?? "Quick Add Deadline",
+      content: `
+        <div class="b3-dialog__content">
+          <div class="deadline-quickadd">
+            <label class="deadline-quickadd__label" for="deadline-title">${this.escapeHtml(this.i18n.newTaskPrompt ?? "Task title")}</label>
+            <input id="deadline-title" class="b3-text-field" type="text" placeholder="${this.escapeHtml(this.i18n.newTaskPrompt ?? "Task title")}" />
+            <div class="deadline-quickadd__grid">
+              <div class="deadline-quickadd__field">
+                <label class="deadline-quickadd__label" for="deadline-date">${this.escapeHtml(this.i18n.newTaskDuePrompt ?? "Due date (optional, YYYY-MM-DD)")}</label>
+                <input id="deadline-date" class="b3-text-field" type="date" value="${todayIsoDate()}" />
+              </div>
+              <div class="deadline-quickadd__field">
+                <label class="deadline-quickadd__label" for="deadline-time">${this.escapeHtml(this.i18n.newTaskTimePrompt ?? "Due time (optional, HH:mm)")}</label>
+                <input id="deadline-time" class="b3-text-field" type="time" />
+              </div>
+            </div>
+            <div class="deadline-quickadd__field">
+              <label class="deadline-quickadd__label" for="deadline-priority">${this.escapeHtml(this.i18n.priorityLabel ?? "Priority")}</label>
+              <select id="deadline-priority" class="b3-select">
+                <option value="">${this.escapeHtml(this.i18n.priorityAuto ?? "Auto")}</option>
+                <option value="High">${this.escapeHtml(this.i18n.priorityHigh ?? "High")}</option>
+                <option value="Medium">${this.escapeHtml(this.i18n.priorityMedium ?? "Medium")}</option>
+                <option value="Low">${this.escapeHtml(this.i18n.priorityLow ?? "Low")}</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        <div class="b3-dialog__action">
+          <button class="b3-button b3-button--cancel" data-role="cancel">${this.escapeHtml(this.i18n.cancelLabel ?? "Cancel")}</button>
+          <div class="fn__space"></div>
+          <button class="b3-button b3-button--text" data-role="save">${this.escapeHtml(this.i18n.saveLabel ?? "Save")}</button>
+        </div>
+      `,
+      width: "560px",
+      height: "360px"
+    });
+
+    const titleInput = dialog.element.querySelector<HTMLInputElement>("#deadline-title");
+    const dateInput = dialog.element.querySelector<HTMLInputElement>("#deadline-date");
+    const timeInput = dialog.element.querySelector<HTMLInputElement>("#deadline-time");
+    const priorityInput = dialog.element.querySelector<HTMLSelectElement>("#deadline-priority");
+    const cancelButton = dialog.element.querySelector<HTMLButtonElement>("[data-role='cancel']");
+    const saveButton = dialog.element.querySelector<HTMLButtonElement>("[data-role='save']");
+
+    const saveTask = (): void => {
+      const task = this.createTaskFromInput({
+        title: titleInput?.value ?? "",
+        dueDateValue: dateInput?.value,
+        dueTimeValue: timeInput?.value,
+        priorityValue: priorityInput?.value
+      });
+
+      if (!task) {
+        return;
+      }
+
+      this.insertTask(task);
+      showMessage(this.i18n.createdTask ?? "Task created");
+      dialog.destroy();
+      this.openDeadlineInspectorDialog();
+    };
+
+    cancelButton?.addEventListener("click", () => dialog.destroy(), { once: true });
+    saveButton?.addEventListener("click", saveTask, { once: true });
+    titleInput?.addEventListener("keydown", (event) => {
+      if (event.key === "Enter") {
+        event.preventDefault();
+        saveTask();
+      }
+    });
+    titleInput?.focus();
+  }
+
   private insertTask(task: DeadlineTask): void {
     this.state.tasks = [task, ...this.state.tasks];
     this.afterStateMutate();
+  }
+
+  private completeTask(taskId: string): void {
+    const next = this.state.tasks.map((task) =>
+      task.id === taskId
+        ? normalizeTask({
+            ...task,
+            completed: true,
+            column: "completed",
+            updatedAt: Date.now()
+          })
+        : task
+    );
+    this.updateTasks(next);
+    showMessage(this.i18n.completedTask ?? "Task completed");
+  }
+
+  private openTaskFromDock(taskId: string): void {
+    const task = this.state.tasks.find((item) => item.id === taskId);
+    if (!task) {
+      return;
+    }
+    this.openTask(task);
   }
 
   private getBoardDeepLink(): string {
@@ -397,6 +482,63 @@ export default class CalendarDeadlinesPlugin extends Plugin {
     }
 
     const upcoming = summarizeUpcoming(this.state.tasks);
+    const urgentTasks = upcoming.filter((task) => (task.dueStatus ?? "normal") === "urgent");
+    const warningTasks = upcoming.filter((task) => (task.dueStatus ?? "normal") === "warning");
+    const normalTasks = upcoming.filter((task) => (task.dueStatus ?? "normal") === "normal");
+    const criticalCount = upcoming.filter((task) => {
+      const diff = getDueDiffDays(task.dueDate);
+      return diff !== null && diff <= 0;
+    }).length;
+    const weekCount = upcoming.filter((task) => {
+      const diff = getDueDiffDays(task.dueDate);
+      return diff !== null && diff > 0 && diff <= 7;
+    }).length;
+    const laterCount = Math.max(upcoming.length - criticalCount - weekCount, 0);
+
+    const groupHtml = (title: string, tone: "urgent" | "warning" | "normal", tasks: DeadlineTask[]): string => {
+      if (!tasks.length) {
+        return "";
+      }
+
+      return `
+        <section class="deadline-dock__group ${tone}">
+          <header class="deadline-dock__group-head">
+            <span>${this.escapeHtml(title)}</span>
+            <span class="deadline-dock__group-count">${tasks.length}</span>
+          </header>
+          <ul class="deadline-dock__group-list">
+            ${tasks
+              .map(
+                (task) => `
+                  <li class="deadline-dock__item ${this.escapeHtml(task.dueStatus ?? "normal")}">
+                    <div class="deadline-dock__item-top">
+                      <strong class="deadline-dock__task-title">${this.escapeHtml(task.title)}</strong>
+                      <span class="deadline-dock__pill ${this.escapeHtml(task.dueStatus ?? "normal")}">${this.escapeHtml(
+                        task.dueStatus === "urgent"
+                          ? this.i18n.urgencyUrgent ?? "Urgent"
+                          : task.dueStatus === "warning"
+                            ? this.i18n.urgencySoon ?? "Soon"
+                            : this.i18n.urgencyNormal ?? "Normal"
+                      )}</span>
+                    </div>
+                    <div class="deadline-dock__meta">${this.escapeHtml(formatDueSchedule(task.dueDate, task.dueTime))}${task.dueText ? ` | ${this.escapeHtml(task.dueText)}` : ""}</div>
+                    ${
+                      task.priority
+                        ? `<div class="deadline-dock__priority ${this.escapeHtml(task.priority.toLowerCase())}">${this.escapeHtml(task.priority)} ${this.escapeHtml(this.i18n.priorityLabel ?? "Priority")}</div>`
+                        : ""
+                    }
+                    <div class="deadline-dock__task-actions">
+                      <button class="deadline-dock__task-btn" data-role="task-open" data-task-id="${this.escapeHtml(task.id)}">${this.escapeHtml(this.i18n.openAction ?? "Open")}</button>
+                      <button class="deadline-dock__task-btn success" data-role="task-done" data-task-id="${this.escapeHtml(task.id)}">${this.escapeHtml(this.i18n.doneAction ?? "Done")}</button>
+                    </div>
+                  </li>
+                `
+              )
+              .join("")}
+          </ul>
+        </section>
+      `;
+    };
 
     this.dockElement.innerHTML = `
       <section class="deadline-dock">
@@ -405,35 +547,63 @@ export default class CalendarDeadlinesPlugin extends Plugin {
           <div class="deadline-dock__actions">
             <button class="deadline-dock__btn" data-role="quick-add">${this.i18n.newTask ?? "New"}</button>
             <button class="deadline-dock__btn" data-role="open-inspector">${this.i18n.openInspector ?? "Inspector"}</button>
-            <button class="deadline-dock__btn" data-role="open-board">${this.i18n.openBoard ?? "Open"}</button>
           </div>
         </header>
-        <ul class="deadline-dock__list">
+        <div class="deadline-dock__stats">
+          <div class="deadline-dock__stat urgent">
+            <span>${this.escapeHtml(this.i18n.statsCritical ?? "Critical")}</span>
+            <strong>${criticalCount}</strong>
+          </div>
+          <div class="deadline-dock__stat warning">
+            <span>${this.escapeHtml(this.i18n.statsThisWeek ?? "This Week")}</span>
+            <strong>${weekCount}</strong>
+          </div>
+          <div class="deadline-dock__stat normal">
+            <span>${this.escapeHtml(this.i18n.statsLater ?? "Later")}</span>
+            <strong>${laterCount}</strong>
+          </div>
+        </div>
+        <div class="deadline-dock__list">
           ${
             upcoming.length
-              ? upcoming
-                  .map(
-                    (task) => `
-              <li class="deadline-dock__item">
-                <strong>${this.escapeHtml(task.title)}</strong>
-                <div class="deadline-dock__meta">${this.escapeHtml(formatDueSchedule(task.dueDate, task.dueTime))}${task.dueText ? ` | ${this.escapeHtml(task.dueText)}` : ""}</div>
-              </li>
-            `
-                  )
-                  .join("")
-              : `<li class="deadline-dock__item">${this.i18n.emptyDock ?? "No active tasks"}</li>`
+              ? `${groupHtml(this.i18n.groupUrgent ?? "Urgent", "urgent", urgentTasks)}${groupHtml(this.i18n.groupSoon ?? "Soon", "warning", warningTasks)}${groupHtml(this.i18n.groupUpcoming ?? "Upcoming", "normal", normalTasks)}`
+              : `<div class="deadline-dock__item">${this.i18n.emptyDock ?? "No active tasks"}</div>`
           }
-        </ul>
+        </div>
       </section>
     `;
 
-    const openButton = this.dockElement.querySelector<HTMLButtonElement>("[data-role='open-board']");
     const addButton = this.dockElement.querySelector<HTMLButtonElement>("[data-role='quick-add']");
     const inspectButton = this.dockElement.querySelector<HTMLButtonElement>("[data-role='open-inspector']");
+    const doneButtons = this.dockElement.querySelectorAll<HTMLButtonElement>("[data-role='task-done']");
+    const openButtons = this.dockElement.querySelectorAll<HTMLButtonElement>("[data-role='task-open']");
 
-    addButton?.addEventListener("click", () => this.quickAddTask(), { once: true });
+    addButton?.addEventListener("click", () => this.openQuickAddDialog(), { once: true });
     inspectButton?.addEventListener("click", () => this.openDeadlineInspectorDialog(), { once: true });
-    openButton?.addEventListener("click", () => this.openBoardTab(), { once: true });
+    doneButtons.forEach((button) => {
+      button.addEventListener(
+        "click",
+        () => {
+          const taskId = button.dataset.taskId;
+          if (taskId) {
+            this.completeTask(taskId);
+          }
+        },
+        { once: true }
+      );
+    });
+    openButtons.forEach((button) => {
+      button.addEventListener(
+        "click",
+        () => {
+          const taskId = button.dataset.taskId;
+          if (taskId) {
+            this.openTaskFromDock(taskId);
+          }
+        },
+        { once: true }
+      );
+    });
   }
 
   private scheduleSave(): void {
